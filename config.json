@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "target": "es6",
+    "paths": {
+      "util/*": [
+        "./src/util/*"
+      ],
+      "type/*": [
+        "./src/store/Actions/type/*"
+      ],
+      "Actions/*": [
+        "./src/store/Actions/*"
+      ],
+      "Reducer/*": [
+        "./src/store/Reducer/*"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": ["src"]
+}
