@@ -14,11 +14,11 @@ import { NavLink } from 'react-router-dom';
 import moment from 'moment';
 import { layThongTinNguoiDungAction } from '../../../store/Actions/QuanLyNguoiDungAction';
 import { TOKEN } from '../../../util/setting/config';
+import { connection } from '../../../index';
 
 function Checkout(props) {
-  let userLogin = localStorage.getItem("UserAdmin");
-  // const userLogin = JSON.parse(localStorage.getItem("UserAdmin"));
 
+  const { userLogin } = useSelector(state => state.QuanLyNguoiDungReducer);
   const { chiTietPhongVe, danhSachGheDangDat, danhSachGheKhachDat } = useSelector(state => state.QuanLyDatVeReducer);
   const dispatch = useDispatch();
 
@@ -34,49 +34,57 @@ function Checkout(props) {
     dispatch(action);
 
     //Có 1 client nào thực hiện việc đặt vé thành công mình sẽ load lại danh sách phòng vé của lịch chiếu đó
-    // connection.on('datVeThanhCong', () => {
-    //     dispatch(action);
-    // })
+    connection.on('datVeThanhCong', () => {
+      dispatch(action);
+    })
 
 
     //Vừa vào trang load tất cả ghế của các người khác đang đặt
-    // connection.invoke('loadDanhSachGhe', params.id);
+    connection.invoke('loadDanhSachGhe', params.id);
 
 
     // //Load danh sách ghế đang đặt từ server về (lắng nghe tín hiệu từ server trả về)
-    // connection.on("loadDanhSachGheDaDat", (dsGheKhachDat) => {
-    //     console.log('danhSachGheKhachDat', dsGheKhachDat);
-    //     //Bước 1: Loại mình ra khỏi danh sách 
-    //     dsGheKhachDat = dsGheKhachDat.filter(item => item.taiKhoan !== userLogin.taiKhoan);
-    //     //Bước 2 gộp danh sách ghế khách đặt ở tất cả user thành 1 mảng chung 
+    connection.on("loadDanhSachGheDaDat", (dsGheKhachDat) => {
+      console.log('danhSachGheKhachDat', dsGheKhachDat);
+      //     //Bước 1: Loại mình ra khỏi danh sách 
+      dsGheKhachDat = dsGheKhachDat.filter(item => item.taiKhoan !== userLogin.taiKhoan);
+      //     //Bước 2 gộp danh sách ghế khách đặt ở tất cả user thành 1 mảng chung 
 
-    //     let arrGheKhachDat = dsGheKhachDat.reduce((result, item, index) => {
-    //         let arrGhe = JSON.parse(item.danhSachGhe);
+      let arrGheKhachDat = dsGheKhachDat.reduce((result, item, index) => {
+        let arrGhe = JSON.parse(item.danhSachGhe);
 
-    //         return [...result, ...arrGhe];
-    //     }, []);
+        return [...result, ...arrGhe];
+      }, []);
 
-    //     //Đưa dữ liệu ghế khách đặt cập nhật redux
-    //     arrGheKhachDat = _.uniqBy(arrGheKhachDat, 'maGhe');
+      //     //Đưa dữ liệu ghế khách đặt cập nhật redux
+      //Hàm uniqBy để loại phần tử trùng nhau trong mảng nếu 2 khách đặt trùng ghế khi mạng lag.
+      arrGheKhachDat = _.uniqBy(arrGheKhachDat, 'maGhe');
 
-    //Đưa dữ liệu ghế khách đặt về redux
-    //     dispatch({
-    //         type: 'DAT_GHE',
-    //         arrGheKhachDat
-    //     })
+      // Đưa dữ liệu ghế khách đặt về redux
+      dispatch({
+        type: 'DAT_GHE',
+        arrGheKhachDat
+      })
 
-    // })
+    })
 
-    //Cài đặt sự kiện khi reload trang
-    // window.addEventListener("beforeunload", clearGhe);
+    // Cài đặt sự kiện khi reload trang
+    window.addEventListener("beforeunload", clearGhe);
 
-    // return () => {
-    //     clearGhe();
-    //     window.removeEventListener('beforeunload', clearGhe);
-    // }
+    return () => {
+      clearGhe();
+      window.removeEventListener('beforeunload', clearGhe);
+    }
 
   }, [])
 
+
+  const clearGhe = function (event) {
+    connection.invoke('huyDat', userLogin.taiKhoan, params.id);
+  }
+
+
+  console.log({ chiTietPhongVe });
 
   const { thongTinPhim, danhSachGhe } = chiTietPhongVe;
 
@@ -89,7 +97,7 @@ function Checkout(props) {
       //Kiểm tra từng ghế render xem có trong mảng ghế đang đặt hay không
       let indexGheDD = danhSachGheDangDat.findIndex(gheDD => gheDD.maGhe === ghe.maGhe);
 
-      //Kiểm tra từng render xem có phải ghế khách đặt hay không
+      //Kiểm tra từng render xem có phải ghế khách đặt hay không (websocket)
       let classGheKhachDat = '';
       let indexGheKD = danhSachGheKhachDat.findIndex(gheKD => gheKD.maGhe === ghe.maGhe);
       if (indexGheKD !== -1) {
@@ -257,16 +265,16 @@ export default function CheckoutTab(props) {
     {!_.isEmpty(userLogin) ? <Fragment> <button onClick={() => {
       // history.push('/profile')
       navigate('/profile')
-    }}> 
-    {/* <div style={{ width: 50, height: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }} className="text-2xl ml-5 rounded-full bg-red-200">{userLogin.taiKhoan.substr(0, 1)}</div>Hello ! {userLogin.taiKhoan} */}
-    </button> 
-    <button onClick={() => {
-      localStorage.removeItem(userLogin);
-      localStorage.removeItem(TOKEN);
-      // history.push('/home');
-      navigate('/home')
-      window.location.reload();
-    }} className="text-blue-800">Đăng xuất</button> </Fragment> : ''}
+    }}>
+      {/* <div style={{ width: 50, height: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }} className="text-2xl ml-5 rounded-full bg-red-200">{userLogin.taiKhoan.substr(0, 1)}</div>Hello ! {userLogin.taiKhoan} */}
+    </button>
+      <button onClick={() => {
+        localStorage.removeItem(userLogin);
+        localStorage.removeItem(TOKEN);
+        // history.push('/home');
+        navigate('/home')
+        window.location.reload();
+      }} className="text-blue-800">Đăng xuất</button> </Fragment> : ''}
 
   </Fragment>
 
@@ -311,10 +319,10 @@ function KetQuaDatVe(props) {
 
   console.log('thongTinNguoiDung', thongTinNguoiDung);
 
+
   const renderTicketItem = function () {
     return thongTinNguoiDung.thongTinDatVe?.map((ticket, index) => {
       const seats = _.first(ticket.danhSachGhe);
-
       return <div className="p-2 lg:w-1/3 md:w-1/2 w-full" key={index}>
         <div className="h-full flex items-center border-gray-200 border p-4 rounded-lg">
           <img alt="team" className="w-16 h-16 bg-gray-100 object-cover object-center flex-shrink-0 rounded-full mr-4" src={ticket.hinhAnh} />
@@ -331,26 +339,17 @@ function KetQuaDatVe(props) {
     })
   }
 
+
   return <div className="p-5">
 
     <section className="text-gray-600 body-font">
-      <div className="container px-5 py-24 mx-auto">
+      <div className="container px-5 mx-auto">
         <div className="flex flex-col text-center w-full mb-20">
           <h1 className="sm:text-3xl text-2xl font-medium title-font mb-4  text-purple-600 ">Lịch sử đặt vé khách hàng</h1>
           <p className="lg:w-2/3 mx-auto leading-relaxed text-base">Hãy xem thông tin địa và thời gian để xem phim vui vẻ bạn nhé !</p>
         </div>
         <div className="flex flex-wrap -m-2">
           {renderTicketItem()}
-          {/* <div className="p-2 lg:w-1/3 md:w-1/2 w-full">
-                        <div className="h-full flex items-center border-gray-200 border p-4 rounded-lg">
-                            <img alt="team" className="w-16 h-16 bg-gray-100 object-cover object-center flex-shrink-0 rounded-full mr-4" src="https://picsum.photos/200/200" />
-                            <div className="flex-grow">
-                                <h2 className="text-gray-900 title-font font-medium">Lật mặt 48h</h2>
-                                <p className="text-gray-500">10:20 Rạp 5, Hệ thống rạp cinestar bhd </p>
-                            </div>
-                        </div>
-                    </div> */}
-
         </div>
       </div>
     </section>

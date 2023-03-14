@@ -1,10 +1,16 @@
 import * as ActionType from "../Actions/type/QuanLyNguoiDungType"
 
+let user = {};
+if(localStorage.getItem("UserAdmin")) {
+    user = JSON.parse(localStorage.getItem("UserAdmin"));
+}
+
 const initialState = {
   loading: false,
   data: null,
   error: null,
-  thongTinNguoiDung: {}
+  thongTinNguoiDung: {},
+  userLogin: user,
 };
 
 export const QuanLyNguoiDungReducer = (state = initialState, action) => {

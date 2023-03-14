@@ -2,6 +2,7 @@ import { SET_CHI_TIET_PHONG_VE, DAT_VE, DAT_VE_HOAN_TAT, CHUYEN_TAB } from "./ty
 import { quanLyDatVeService } from "../../services/QuanLyDatVeService";
 import { ThongTinDatVe } from "../../_core/ThongTinDatVe";
 import { displayLoadingAction, hideLoadingAction } from "./LoadingActions";
+import { connection } from "../..";
 
 export const layChiTietPhongVeAction = (maLichChieu) => {
 
@@ -29,7 +30,7 @@ export const layChiTietPhongVeAction = (maLichChieu) => {
 
 export const datVeAction = (thongTinDatVe = new ThongTinDatVe()) => {
 
-    return async (dispatch,getState) => {
+    return async (dispatch, getState) => {
         try {
 
             dispatch(displayLoadingAction)
@@ -38,13 +39,14 @@ export const datVeAction = (thongTinDatVe = new ThongTinDatVe()) => {
             console.log(result.data.content);
             //Đặt vé thành công gọi api load lại phòng vé
             await dispatch(layChiTietPhongVeAction(thongTinDatVe.maLichChieu))
-            await dispatch({type:DAT_VE_HOAN_TAT})
+            //Hiển thị đã đặt vé lên trc rồi mới tắt loading xong mới chuyển tab
+            await dispatch({ type: DAT_VE_HOAN_TAT })
             await dispatch(hideLoadingAction);
 
             let userLogin = getState().QuanLyNguoiDungReducer.userLogin;
-            //  connection.invoke('datGheThanhCong',userLogin.taiKhoan,thongTinDatVe.maLichChieu);
+            connection.invoke('datGheThanhCong', userLogin.taiKhoan, thongTinDatVe.maLichChieu);
 
-            dispatch({type:CHUYEN_TAB});
+            dispatch({ type: CHUYEN_TAB });
 
 
         } catch (error) {
@@ -55,10 +57,10 @@ export const datVeAction = (thongTinDatVe = new ThongTinDatVe()) => {
 
 }
 
-export const datGheAction = (ghe,maLichChieu) => {
-// let userLogin = localStorage.getItem("UserAdmin");
-    
-    return async (dispatch,getState) => {
+export const datGheAction = (ghe, maLichChieu) => {
+   
+
+    return async (dispatch, getState) => {
 
         //Đưa thông tin ghế lên reducer
         await dispatch({
@@ -68,17 +70,16 @@ export const datGheAction = (ghe,maLichChieu) => {
 
         //Call api về backend 
         let danhSachGheDangDat = getState().QuanLyDatVeReducer.danhSachGheDangDat;
+        let taiKhoan = getState().QuanLyNguoiDungReducer.userLogin.taiKhoan;
 
-        // let taiKhoan = getState().userLogin.taiKhoan;
-
-        console.log('danhSachGheDangDat',danhSachGheDangDat);
-        // console.log('taiKhoan',taiKhoan);
-        console.log('maLichChieu',maLichChieu);
+        console.log('danhSachGheDangDat', danhSachGheDangDat);
+        console.log('taiKhoan',taiKhoan);
+        console.log('maLichChieu', maLichChieu);
         //Biến mảng thành chuỗi
         danhSachGheDangDat = JSON.stringify(danhSachGheDangDat);
 
         //Call api signalR
-        // connection.invoke('datGhe',taiKhoan,danhSachGheDangDat,maLichChieu);
+        connection.invoke('datGhe', taiKhoan, danhSachGheDangDat, maLichChieu);
 
     }
 }
