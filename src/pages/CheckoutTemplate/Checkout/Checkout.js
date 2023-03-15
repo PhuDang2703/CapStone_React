@@ -39,7 +39,7 @@ function Checkout(props) {
     })
 
 
-    //Vừa vào trang load tất cả ghế của các người khác đang đặt
+    //Vừa vào lại trang do reload thì tự động load tất cả ghế của các người khác đang đặt
     connection.invoke('loadDanhSachGhe', params.id);
 
 
@@ -105,7 +105,7 @@ function Checkout(props) {
       }
 
       let classGheDaDuocDat = '';
-      let userLogin = localStorage.getItem("UserAdmin");
+      // let userLogin = localStorage.getItem("UserAdmin");
       if (userLogin.taiKhoan === ghe.taiKhoanNguoiDat) {
         classGheDaDuocDat = 'gheDaDuocDat';
       }
